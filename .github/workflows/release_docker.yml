@@ -1,0 +1,59 @@
+# =============================================================================
+#  Release Assets and Homebrew's Tap
+# =============================================================================
+#  This action requires the following secrets to be set:
+#  - DOCKERHUB_USERNAME ...... User name to login to DockerHub.
+#  - DOCKERHUB_TOKEN ......... Personal access token to login to DockerHub.
+#  - PERSONAL_ACCESS_TOKEN ... Personal access token to access GitHub API.
+#
+#  Set them via "repository secret" under "Security" -> "Secrets and variables"
+#  "Actions" section in the GitHub's project settings. Also note that DockerHub
+#  allows only one personal access token per free account. So you may need to
+#  re-use the same token for other projects.
+name: Release
+
+on:
+  workflow_dispatch:
+  release:
+    types:
+      - created
+    tags:
+      - 'v*'
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          # required for the changelog of goreleaser to work correctly.
+          fetch-depth: 0
+
+      # Setup
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+         go-version: 'stable'
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+
+      # Login to DockerHub before push.
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Build and release
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v4
+        with:
+          version: latest
+          args: release --config .goreleaser.yml --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
