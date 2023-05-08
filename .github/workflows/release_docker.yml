@@ -1,5 +1,5 @@
 # =============================================================================
-#  Release Assets and Homebrew's Tap
+#  Docker Image Release
 # =============================================================================
 #  This action requires the following secrets to be set:
 #  - DOCKERHUB_USERNAME ...... User name to login to DockerHub.
